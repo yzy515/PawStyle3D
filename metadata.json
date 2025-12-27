@@ -1,0 +1,5 @@
+{
+  "name": "PawStyle",
+  "description": "An automated pet clothing customization platform that uses Gemini 2.5 Flash Image (Nanobanana) to generate high-fidelity 3D-style previews of pets in bespoke outfits with custom patterns.",
+  "requestFramePermissions": []
+}
