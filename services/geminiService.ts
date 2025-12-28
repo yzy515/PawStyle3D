@@ -1,8 +1,42 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { PetData, ClothingConfig } from "../types";
 
-export type ViewType = 'main' | 'side' | 'back' | 'detail';
+export type ViewType = 'main' | 'side' | 'back' | 'detail' | 'accessory';
+
+export const generateAccessoryPreview = async (
+  petName: string,
+  clothingConfig: ClothingConfig,
+): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  
+  const prompt = `A professional macro 3D render of a luxury pet collar and matching engraved tag. 
+  The collar is made of high-quality material matching the style of ${clothingConfig.fabric} in ${clothingConfig.color} color. 
+  The tag is a sleek metallic tech-silver pet tag. 
+  CRITICAL: The name "${petName}" is clearly and beautifully engraved/printed on the center of the pet tag. 
+  The lighting is cinematic studio lighting with a soft depth of field. 8k resolution, octane render, photorealistic.`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+          aspectRatio: "1:1"
+        }
+      }
+    });
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("No image was generated.");
+  } catch (error: any) {
+    console.error("Accessory Generation Error:", error);
+    throw new Error(error.message || "Failed to generate accessory preview.");
+  }
+};
 
 export const generatePetPreview = async (
   petData: PetData,

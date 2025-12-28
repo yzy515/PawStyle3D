@@ -1,11 +1,11 @@
-
 export enum Step {
   PET_INFO = 1,
   STYLE_FABRIC = 2,
   PATTERN_UPLOAD = 3,
   MAIN_PREVIEW = 4,
   SHOWCASE = 5,
-  PAYMENT = 6
+  ACCESSORY_DESIGN = 6,
+  PAYMENT = 7
 }
 
 export interface PetData {
@@ -14,6 +14,7 @@ export interface PetData {
   chestSize: string;
   neckSize: string;
   length: string;
+  petName?: string;
 }
 
 export interface ClothingConfig {
@@ -27,6 +28,7 @@ export interface ShowcaseImages {
   side?: string;
   back?: string;
   detail?: string;
+  accessory?: string;
 }
 
 export interface CustomizationState {
@@ -37,6 +39,7 @@ export interface CustomizationState {
   humanClothingBase64?: string;
   showcase: ShowcaseImages;
   isGenerating: boolean;
+  isGeneratingAccessory?: boolean;
   error?: string;
 }
 
@@ -44,7 +47,8 @@ export const FABRICS = [
   { id: 'cotton', name: 'Premium Cotton', desc: 'Breathable and soft', icon: '☁️' },
   { id: 'wool', name: 'Organic Wool', desc: 'Warm and cozy', icon: '🧶' },
   { id: 'silk', name: 'Luxe Silk', desc: 'Smooth and elegant', icon: '✨' },
-  { id: 'polyester', name: 'Durable Poly', desc: 'Athletic and tough', icon: '🛡️' }
+  { id: 'polyester', name: 'Durable Poly', desc: 'Athletic and tough', icon: '🛡️' },
+  { id: 'raincoat', name: 'Raincoat', desc: 'Waterproof & light', icon: '☂️' }
 ];
 
 export const STYLES = [

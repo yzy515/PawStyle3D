@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { 
@@ -25,16 +24,19 @@ import {
   Users,
   Shirt,
   Sparkles,
-  Pipette
+  Pipette,
+  Tag,
+  Gift
 } from 'lucide-react';
-import { generatePetPreview, ViewType } from './services/geminiService';
+import { generatePetPreview, ViewType, generateAccessoryPreview } from './services/geminiService';
 
 const INITIAL_PET_DATA: PetData = {
   breed: 'French Bulldog',
   weight: '12',
   chestSize: '50',
   neckSize: '35',
-  length: '40'
+  length: '40',
+  petName: ''
 };
 
 const INITIAL_CLOTHING_CONFIG: ClothingConfig = {
@@ -59,7 +61,8 @@ const App: React.FC = () => {
     petData: INITIAL_PET_DATA,
     clothingConfig: INITIAL_CLOTHING_CONFIG,
     showcase: {},
-    isGenerating: false
+    isGenerating: false,
+    isGeneratingAccessory: false
   });
 
   const nextStep = () => setState(prev => ({ ...prev, step: prev.step + 1 }));
@@ -118,6 +121,7 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         showcase: {
+          ...prev.showcase,
           main: results[0],
           side: results[1],
           back: results[2],
@@ -132,9 +136,25 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGenerateAccessory = async () => {
+    if (!state.petData.petName) return;
+    setState(prev => ({ ...prev, isGeneratingAccessory: true, error: undefined }));
+    try {
+      const accessoryImg = await generateAccessoryPreview(state.petData.petName, state.clothingConfig);
+      setState(prev => ({
+        ...prev,
+        showcase: { ...prev.showcase, accessory: accessoryImg }
+      }));
+    } catch (err: any) {
+      setState(prev => ({ ...prev, error: err.message }));
+    } finally {
+      setState(prev => ({ ...prev, isGeneratingAccessory: false }));
+    }
+  };
+
   const renderStepper = () => (
     <div className="flex items-center justify-center space-x-2 md:space-x-4 mb-8 overflow-x-auto py-2 px-4 no-scrollbar">
-      {[1, 2, 3, 4, 5, 6].map((s) => (
+      {[1, 2, 3, 4, 5, 6, 7].map((s) => (
         <React.Fragment key={s}>
           <div className={`flex flex-shrink-0 items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
             state.step === s ? 'bg-brandPurple text-white shadow-lg shadow-brandPurple/20 scale-110' : 
@@ -142,7 +162,7 @@ const App: React.FC = () => {
           }`}>
             {state.step > s ? <CheckCircle className="w-5 h-5" /> : s}
           </div>
-          {s < 6 && <div className={`h-0.5 w-6 md:w-10 flex-shrink-0 transition-colors duration-300 ${state.step > s ? 'bg-brandPurple' : 'bg-silverGray/20'}`} />}
+          {s < 7 && <div className={`h-0.5 w-6 md:w-10 flex-shrink-0 transition-colors duration-300 ${state.step > s ? 'bg-brandPurple' : 'bg-silverGray/20'}`} />}
         </React.Fragment>
       ))}
     </div>
@@ -526,7 +546,81 @@ const App: React.FC = () => {
                   onClick={nextStep}
                   className="flex-[2] flex justify-center items-center py-4 px-6 rounded-xl shadow-lg shadow-brandPurple/20 text-sm font-bold text-white bg-brandPurple hover:bg-opacity-90 transition-all"
                 >
-                  Proceed to Checkout <ArrowRight className="ml-2 w-4 h-4" />
+                  Accessory Design <ArrowRight className="ml-2 w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {state.step === Step.ACCESSORY_DESIGN && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center space-x-3 text-brandPurple">
+                <Tag className="w-6 h-6" />
+                <h2 className="text-xl font-bold tracking-tight">6. Matching Accessories</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div className="bg-apricot/20 p-6 rounded-[2rem] border border-silverGray/10">
+                    <label className="block text-[10px] font-black text-silverGray uppercase mb-3 ml-1 tracking-widest">Pet Name for Tag</label>
+                    <input 
+                      type="text" 
+                      value={state.petData.petName}
+                      onChange={(e) => updatePetData('petName', e.target.value)}
+                      className="w-full p-4 rounded-xl border border-silverGray/20 bg-white focus:ring-brandPurple focus:border-brandPurple transition-all shadow-sm"
+                      placeholder="Enter pet's name"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-4 leading-relaxed">
+                      Generated accessories will perfectly match your outfit's material and <span className="text-brandPurple font-bold uppercase">{state.clothingConfig.color}</span> color palette.
+                    </p>
+                    <button 
+                      onClick={handleGenerateAccessory}
+                      disabled={state.isGeneratingAccessory || !state.petData.petName}
+                      className="w-full mt-8 bg-brandPurple text-white py-4 rounded-xl font-bold shadow-lg shadow-brandPurple/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center disabled:opacity-50"
+                    >
+                      {state.isGeneratingAccessory ? (
+                        <><Loader2 className="animate-spin mr-2 w-5 h-5" /> Designing...</>
+                      ) : (
+                        <><Sparkles className="w-5 h-5 mr-2" /> Generate Matching Set</>
+                      )}
+                    </button>
+                  </div>
+                  
+                  <div className="bg-mistBlue/10 p-5 rounded-2xl border border-mistBlue/20">
+                     <div className="flex items-center space-x-2 text-brandPurple mb-3">
+                        <Gift className="w-4 h-4" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider">Bundle Package</h4>
+                     </div>
+                     <p className="text-[11px] text-gray-500">Includes a matching premium collar and a custom-engraved metallic tag for your companion.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center">
+                  <div className="aspect-square w-full max-w-[320px] bg-white rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white relative group transition-transform hover:rotate-1">
+                    {state.showcase.accessory ? (
+                      <img src={state.showcase.accessory} alt="Accessory Design" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-apricot/10">
+                        <Tag className="w-16 h-16 text-silverGray/20 mb-4" />
+                        <p className="text-[10px] font-black text-silverGray uppercase tracking-[0.2em] text-center">Design Preview</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-4 pt-10">
+                <button 
+                  onClick={prevStep}
+                  className="flex-1 flex justify-center items-center py-4 px-6 border border-silverGray/30 rounded-xl text-sm font-bold text-gray-700 bg-white hover:bg-apricot transition-colors"
+                >
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Back to Showcase
+                </button>
+                <button 
+                  onClick={nextStep}
+                  className="flex-[2] flex justify-center items-center py-4 px-6 rounded-xl shadow-lg shadow-brandPurple/20 text-sm font-bold text-white bg-brandPurple hover:bg-opacity-90 transition-all"
+                >
+                  Review Order <ArrowRight className="ml-2 w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -541,10 +635,11 @@ const App: React.FC = () => {
                   <div className="absolute bottom-6 left-6 right-6 p-5 bg-white/80 backdrop-blur-md rounded-2xl border border-silverGray/10">
                     <h4 className="text-[10px] font-black text-silverGray mb-3 uppercase tracking-widest">Configuration</h4>
                     <ul className="text-xs text-gray-700 space-y-2 font-medium">
-                      <li className="flex justify-between"><span>Breed</span> <span className="font-bold">{state.petData.breed}</span></li>
+                      <li className="flex justify-between"><span>Pet</span> <span className="font-bold">{state.petData.breed} {state.petData.petName && `(${state.petData.petName})`}</span></li>
                       <li className="flex justify-between"><span>Style</span> <span className="font-bold">{state.clothingConfig.style}</span></li>
                       <li className="flex justify-between"><span>Material</span> <span className="font-bold">{state.clothingConfig.fabric}</span></li>
-                      <li className="flex justify-between"><span>Color Base</span> <span className="font-bold text-brandPurple uppercase">{state.clothingConfig.color}</span></li>
+                      <li className="flex justify-between"><span>Color</span> <span className="font-bold text-brandPurple uppercase">{state.clothingConfig.color}</span></li>
+                      {state.showcase.accessory && <li className="flex items-center text-brandPurple font-bold"><Tag className="w-3 h-3 mr-1" /> Custom Engraved Accessory Set</li>}
                       {state.humanClothingBase64 && <li className="flex items-center text-brandPurple font-bold"><Users className="w-3 h-3 mr-1" /> Parent-Child Match</li>}
                     </ul>
                   </div>
@@ -562,6 +657,12 @@ const App: React.FC = () => {
                     <span className="text-gray-600 text-sm font-medium">Custom 3D Fit Out</span>
                     <span className="font-bold text-gray-900 tracking-tighter">$89.00</span>
                   </div>
+                  {state.showcase.accessory && (
+                    <div className="p-5 bg-apricot/20 rounded-2xl border border-silverGray/10 flex justify-between items-center transition-all hover:bg-white hover:shadow-md">
+                      <span className="text-gray-600 text-sm font-medium">Engraved Collar & Tag</span>
+                      <span className="font-bold text-gray-900 tracking-tighter">$22.00</span>
+                    </div>
+                  )}
                   <div className="p-5 bg-apricot/20 rounded-2xl border border-silverGray/10 flex justify-between items-center transition-all hover:bg-white hover:shadow-md">
                     <span className="text-gray-600 text-sm font-medium">Pattern Printing Fee</span>
                     <span className="font-bold text-gray-900 tracking-tighter">$12.00</span>
@@ -574,7 +675,9 @@ const App: React.FC = () => {
                   )}
                   <div className="pt-6 border-t border-silverGray/20 flex justify-between items-center px-2">
                     <span className="text-lg font-bold text-gray-500 uppercase tracking-widest">Total</span>
-                    <span className="text-3xl font-black text-brandPurple tracking-tighter">${state.humanClothingBase64 ? '116.00' : '101.00'}</span>
+                    <span className="text-3xl font-black text-brandPurple tracking-tighter">
+                      ${(89 + 12 + (state.humanClothingBase64 ? 15 : 0) + (state.showcase.accessory ? 22 : 0)).toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
